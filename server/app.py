@@ -10,6 +10,8 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DATABASE = os.environ.get(
     "DB_URI", f"sqlite:///{os.path.join(BASE_DIR, 'app.db')}")
 
+api = APi(app)
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE
@@ -21,10 +23,24 @@ migrate = Migrate(app, db)
 db.init_app(app)
 
 
-@app.route('/')
-def home():
-    return ''
+class Scientists(Resource):
+    def get(self):
+        scientists = [scientist.to_dict() for scientist in Scientist.query.all()]
+        response = make_response(scientists, 200)
+        return response
+    def post(self):
+        params = request.json
+        new_scientist = Scientist(name = params['name'], field_of_study = params ['field_of_study'])
+        db.session.add(new_scientist)
+        db.session.commit()
+        response = make_response(new_scientist.to_dict(),201)
+        return response
 
+api.add_resource(Scientists, '/scientists')
+class ScientistsById(Resource):
+    def get(self, id):
+        if not scientists:
+            return make_response({"error" : "Scientist not found"}, 404)
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
